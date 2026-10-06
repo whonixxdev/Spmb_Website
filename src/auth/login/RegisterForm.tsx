@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import logoSmk from "../../assets/img/logo-smk.png";
-import { registerUser, sendOtp } from "../../services/api";
+import { registerSendOtp } from "../../services/api";
 
 export default function RegisterForm() {
   const navigate = useNavigate();
@@ -63,19 +63,28 @@ export default function RegisterForm() {
     setLoading(true);
 
     try {
-      await registerUser({
+      await registerSendOtp({
         nama_lengkap: formData.username,
-        username: formData.username.toLowerCase().replace(/\s+/g, "_"),
+        username: formData.username.toLowerCase().trim().replace(/\s+/g, "_"),
         email: formData.email,
+        no_hp: formData.no_hp,
         password: formData.password,
         password_confirmation: formData.password_confirmation,
       });
 
-      // Kirim OTP
-      await sendOtp(formData.email);
-
-      // Pindah ke halaman OTP
-      navigate("/otp", { state: { email: formData.email } });
+      navigate("/otp", {
+        state: {
+          email: formData.email,
+          registerData: {
+            nama_lengkap: formData.username,
+            username: formData.username.toLowerCase().trim().replace(/\s+/g, "_"),
+            email: formData.email,
+            no_hp: formData.no_hp,
+            password: formData.password,
+            password_confirmation: formData.password_confirmation,
+          },
+        },
+      });
     } catch (err: any) {
       setErrorMessage(
         err.response?.data?.message || err.message || "Pendaftaran gagal, periksa data yang dimasukkan."

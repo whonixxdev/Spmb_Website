@@ -1,6 +1,6 @@
 import { Routes, Route, Outlet, Navigate } from "react-router-dom";
 import NavbarSekolah from "./components/ui/Navbar/NavbarSekolah";
-// import HeroSection from "./components/layouts/home/HeroSection";
+import HeroSection from "./components/layouts/home/HeroSection";
 import LoginForm from "./auth/login/LoginForm";
 import RegisterForm from "./auth/login/RegisterForm";
 import OtpForm from "./auth/otp/otpForm";
@@ -35,22 +35,22 @@ function DashboardLayout({ userRole }: { userRole: "siswa" | "admin" }) {
   );
 }
 
-// function WebsiteSekolahPage() {
-//   return (
-//     <>
-//       <NavbarSekolah />
-//       <main className="w-full">
-//         <HeroSection />
-//       </main>
-//     </>
-//   );
-// }
+function WesiteSekolahPage() {
+  return (
+    <>
+      <NavbarSekolah />
+      <main className="w-full">
+        <HeroSection />
+      </main>
+    </>
+  );
+}
 
 export default function App() {
   return (
     <div className="min-h-screen w-full bg-white font-cabinet text-gray-900">
       <Routes>
-        {/* <Route path="/" element={<WebsiteSekolahPage />} /> */}
+        <Route path="/" element={<WesiteSekolahPage />} />
         <Route path="/login" element={<LoginForm />} />
         <Route path="/login/panitia" element={<LoginPanitiaForm />} />
         <Route path="/register" element={<RegisterForm />} />

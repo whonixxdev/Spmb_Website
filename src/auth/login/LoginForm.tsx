@@ -165,6 +165,15 @@ export default function LoginForm() {
               </div>
             </div>
 
+            <div className="flex justify-end">
+              <Link
+                to="/forgot-password"
+                className="text-[11px] text-[#204382] font-semibold hover:underline"
+              >
+                Lupa Password?
+              </Link>
+            </div>
+
             <div className="text-center text-[11px] text-gray-500 my-2">
               Don't have an account yet?{" "}
               <Link
@@ -194,4 +203,4 @@ export default function LoginForm() {
       </div>
     </div>
   );
-}
+}    

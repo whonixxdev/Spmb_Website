@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from "react";
+import { getMyProfile, logoutUser } from "../services/api";
 
 export interface UserData {
   id_user: number;
@@ -13,7 +14,7 @@ interface AuthContextType {
   token: string | null;
   isLoading: boolean;
   login: (token: string, user: UserData) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -24,20 +25,44 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    const storedToken = localStorage.getItem("auth_token");
-    const storedUser = localStorage.getItem("user_data");
+    const initAuth = async () => {
+      const storedToken = localStorage.getItem("auth_token");
+      const storedUser = localStorage.getItem("user_data");
 
-    if (storedToken && storedUser) {
-      try {
+      if (storedToken) {
         setToken(storedToken);
-        setUser(JSON.parse(storedUser));
-      } catch {
-        localStorage.removeItem("auth_token");
-        localStorage.removeItem("user_role");
-        localStorage.removeItem("user_data");
+        if (storedUser) {
+          try {
+            setUser(JSON.parse(storedUser));
+          } catch {
+            // Abaikan jika JSON parse gagal
+          }
+        }
+
+        try {
+          const profile = await getMyProfile();
+          const userData: UserData = {
+            id_user: profile.id_user,
+            username: profile.username,
+            email: profile.email,
+            role: profile.role,
+            id_panitia: profile.id_panitia,
+          };
+          setUser(userData);
+          localStorage.setItem("user_data", JSON.stringify(userData));
+          localStorage.setItem("user_role", profile.role);
+        } catch {
+          localStorage.removeItem("auth_token");
+          localStorage.removeItem("user_role");
+          localStorage.removeItem("user_data");
+          setToken(null);
+          setUser(null);
+        }
       }
-    }
-    setIsLoading(false);
+      setIsLoading(false);
+    };
+
+    initAuth();
   }, []);
 
   const login = (newToken: string, newUser: UserData) => {
@@ -49,13 +74,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setUser(newUser);
   };
 
-  const logout = () => {
-    localStorage.removeItem("auth_token");
-    localStorage.removeItem("user_role");
-    localStorage.removeItem("user_data");
+  const logout = async () => {
+    try {
+      await logoutUser();
+    } catch {
+      // Tetap hapus storage lokal jika API error
+    } finally {
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("user_role");
+      localStorage.removeItem("user_data");
 
-    setToken(null);
-    setUser(null);
+      setToken(null);
+      setUser(null);
+    }
   };
 
   return (

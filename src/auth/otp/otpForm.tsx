@@ -1,14 +1,19 @@
 import React, { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import LogoSmk from "../../assets/img/logo-smk.png";
-import { verifyOtp, sendOtp } from "../../services/api";
+import {
+  forgotPasswordVerifyOtp,
+  forgotPasswordSendOtp,
+  registerVerifyOtp,
+} from "../../services/api";
 
 export default function OtpForm() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Mengambil email yang dikirim lewat state navigasi router
+  // Tangkap email & tipe alur dari state router
   const email = location.state?.email || "";
+  const type = location.state?.type || "register"; 
 
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
@@ -57,18 +62,28 @@ export default function OtpForm() {
     }
 
     if (!email) {
-      setErrorMessage("Email tidak ditemukan. Silakan login/register ulang.");
+      setErrorMessage("Email tidak terdeteksi. Silakan ulangi proses.");
       return;
     }
 
     setLoading(true);
-
     try {
-      await verifyOtp(email, otpCode);
-      navigate("/dashboard");
+      if (type === "forgot-password") {
+        await forgotPasswordVerifyOtp(email, otpCode);
+        // Setelah OTP valid, bisa ke halaman reset password / login
+        alert("OTP Valid! Silakan login kembali.");
+        navigate("/login");
+      } else {
+        const res = await registerVerifyOtp(email, otpCode);
+        if (res.access_token) {
+          localStorage.setItem("auth_token", res.access_token);
+        }
+        navigate("/siswa/dashboard");
+      }
     } catch (err: any) {
+      console.error("OTP Error:", err);
       setErrorMessage(
-        err.response?.data?.message || err.message || "Verifikasi OTP gagal."
+        err.response?.data?.message || err.message || "Kode OTP salah atau kedaluwarsa."
       );
     } finally {
       setLoading(false);
@@ -82,10 +97,10 @@ export default function OtpForm() {
     setSuccessMessage("");
 
     try {
-      await sendOtp(email);
-      setSuccessMessage("Kode OTP baru berhasil dikirim ke email Anda.");
+      await forgotPasswordSendOtp(email);
+      setSuccessMessage("Kode OTP baru berhasil dikirim!");
     } catch (err: any) {
-      setErrorMessage("Gagal mengirim ulang OTP. Coba lagi.");
+      setErrorMessage("Gagal mengirim ulang OTP.");
     } finally {
       setResendLoading(false);
     }
@@ -98,7 +113,7 @@ export default function OtpForm() {
           to="/"
           className="text-gray-700 hover:text-black text-xs flex items-center gap-2 hover:underline cursor-pointer"
         >
-          &larr; Kembali Ke Beranda SPMB
+          &larr; Kembali Ke Beranda
         </Link>
       </div>
 
@@ -112,9 +127,7 @@ export default function OtpForm() {
         </div>
 
         <div className="w-full text-center">
-          <h2 className="text-xl font-bold text-[#204382] mb-2">
-            Verifikasi OTP
-          </h2>
+          <h2 className="text-xl font-bold text-[#204382] mb-2">Verifikasi OTP</h2>
           <p className="text-xs text-gray-600 mb-6 px-2">
             Kami sudah mengirim kode OTP ke email{" "}
             <span className="font-semibold text-gray-800">
@@ -160,7 +173,7 @@ export default function OtpForm() {
               disabled={loading}
               className="w-full bg-[#355B8C] hover:bg-[#204382] disabled:bg-gray-400 text-white font-semibold py-2.5 rounded-lg transition duration-200 text-sm tracking-wide cursor-pointer"
             >
-              {loading ? "VERIFIKASI..." : "VERIFIKASI"}
+              {loading ? "VERIFIKASI..." : "VERIFIKASI OTP"}
             </button>
           </form>
 
