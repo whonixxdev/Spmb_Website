@@ -7,6 +7,7 @@ import {
   FiChevronDown,
   FiMenu,
   FiX,
+  FiPlus,
   FiCode,
   FiTv,
   FiServer,
@@ -16,6 +17,8 @@ import {
   FiAward,
   FiActivity,
   FiGift,
+  FiPhone,
+  FiMail,
 } from "react-icons/fi";
 import { LuGraduationCap } from "react-icons/lu";
 import logoSmk from "../../../assets/img/logo-smk.png";
@@ -153,7 +156,7 @@ const navbarData: readonly NavItem[] = [
 export default function NavbarSekolah(): ReactElement {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [isPinned, setIsPinned] = useState<boolean>(false);
-  const [mobileOpen, setMobileOpen] = useState<boolean>(false);
+  const [openDrawer, setOpenDrawer] = useState<boolean>(false);
   const [mobileExpanded, setMobileExpanded] = useState<number | null>(null);
   const { pathname } = useLocation();
   const navRef = useRef<HTMLDivElement>(null);
@@ -162,7 +165,7 @@ export default function NavbarSekolah(): ReactElement {
 
   const getDashboardTarget = () => {
     if (!token || !user) return "/login";
-    if (user.role === "panitia" || user.role === "admin") return "/panitia/dashboard";
+    if (user.role === "panitia" || user.role === "admin") return "/portal-panitia-spmb/dashboard";
     return "/siswa/dashboard";
   };
 
@@ -172,23 +175,23 @@ export default function NavbarSekolah(): ReactElement {
   useEffect(() => {
     setActiveIndex(null);
     setIsPinned(false);
-    setMobileOpen(false);
+    setOpenDrawer(false);
     setMobileExpanded(null);
   }, [pathname]);
 
   useEffect(() => {
-    document.body.style.overflow = mobileOpen ? "hidden" : "";
+    document.body.style.overflow = openDrawer ? "hidden" : "";
     return () => {
       document.body.style.overflow = "";
     };
-  }, [mobileOpen]);
+  }, [openDrawer]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent): void => {
       if (event.key === "Escape") {
         setActiveIndex(null);
         setIsPinned(false);
-        setMobileOpen(false);
+        setOpenDrawer(false);
       }
     };
 
@@ -231,263 +234,293 @@ export default function NavbarSekolah(): ReactElement {
   };
 
   return (
-    <nav
-      ref={navRef}
-      aria-label="Navigasi utama"
-      className="relative z-50 w-full font-cabinet bg-transparent lg:bg-white text-white lg:text-gray-800 rounded-[50px] lg:rounded-none shadow-none lg:shadow-md"
-    >
-      <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-5 lg:px-8">
-        <Link to="/" aria-label="Beranda" className="flex shrink-0 items-center">
-          <img
-            src={logoSmk}
-            alt="Logo sekolah"
-            className="h-11 w-auto object-contain"
-          />
-        </Link>
+    <>
+      <nav
+        ref={navRef}
+        aria-label="Navigasi utama"
+        className="relative z-50 w-full font-cabinet bg-white text-gray-800 shadow-md"
+      >
+        <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-5 lg:px-8">
+          <Link to="/" aria-label="Beranda" className="flex shrink-0 items-center">
+            <img
+              src={logoSmk}
+              alt="Logo sekolah"
+              className="h-11 w-auto object-contain"
+            />
+          </Link>
 
-        <ul className="hidden items-center gap-1 lg:flex">
-          {navbarData.map((item, index) => {
-            const isActive = activeIndex === index;
-            const hasChildren = Boolean(item.megaMenu && item.megaMenu.length > 0);
+          <ul className="hidden items-center gap-1 lg:flex">
+            {navbarData.map((item, index) => {
+              const isActive = activeIndex === index;
+              const hasChildren = Boolean(item.megaMenu && item.megaMenu.length > 0);
 
-            if (!hasChildren && item.href) {
+              if (!hasChildren && item.href) {
+                return (
+                  <li key={item.title}>
+                    <Link
+                      to={item.href}
+                      onMouseEnter={() => {
+                        if (!isPinned) setActiveIndex(null);
+                      }}
+                      className="flex items-center px-4 py-2 text-sm font-semibold tracking-wider text-gray-700 transition-colors duration-200 hover:text-blue-600"
+                    >
+                      {item.title}
+                    </Link>
+                  </li>
+                );
+              }
+
               return (
-                <li key={item.title}>
-                  <Link
-                    to={item.href}
-                    onMouseEnter={() => {
-                      if (!isPinned) setActiveIndex(null);
-                    }}
-                    className="flex items-center px-4 py-2 text-sm font-semibold tracking-wider text-gray-700 transition-colors duration-200 hover:text-blue-600"
+                <li
+                  key={item.title}
+                  className="relative"
+                  onMouseEnter={() => handleMouseEnter(index)}
+                  onMouseLeave={handleMouseLeave}
+                >
+                  <button
+                    type="button"
+                    aria-expanded={isActive}
+                    onClick={() => handleMenuClick(index)}
+                    className={clsx(
+                      "flex items-center gap-1 px-4 py-2 text-sm font-semibold tracking-wider transition-colors duration-200 rounded-lg",
+                      isActive ? "text-blue-600 bg-blue-50" : "text-gray-700 hover:text-blue-600"
+                    )}
                   >
                     {item.title}
-                  </Link>
+                    <FiChevronDown
+                      className={clsx(
+                        "text-sm transition-transform duration-300",
+                        isActive && "rotate-180"
+                      )}
+                    />
+                  </button>
+
+                  <AnimatePresence>
+                    {isActive && item.megaMenu && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 8, scale: 0.98 }}
+                        transition={{ duration: 0.18, ease: "easeOut" }}
+                        className="absolute left-0 top-full pt-2 w-[480px] z-50"
+                      >
+                        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-2xl ring-1 ring-black/5">
+                          <div className="grid grid-cols-2 gap-6">
+                            {item.megaMenu.map((group) => (
+                              <div key={group.category}>
+                                <p className="mb-2 px-2 text-[10px] font-bold tracking-widest text-gray-400 uppercase">
+                                  {group.category}
+                                </p>
+                                <ul className="space-y-1">
+                                  {group.items.map((sub) => {
+                                    const SubIcon = sub.icon;
+                                    return (
+                                      <li key={sub.href}>
+                                        <Link
+                                          to={sub.href}
+                                          onClick={() => {
+                                            setActiveIndex(null);
+                                            setIsPinned(false);
+                                          }}
+                                          className="group flex items-start gap-2.5 rounded-xl p-2 transition-all duration-200 hover:bg-blue-50"
+                                        >
+                                          {SubIcon && (
+                                            <SubIcon className="mt-0.5 shrink-0 text-base text-blue-600 transition-transform duration-200 group-hover:scale-110" />
+                                          )}
+                                          <div>
+                                            <span className="block text-sm font-semibold text-gray-800 transition-colors group-hover:text-blue-600">
+                                              {sub.title}
+                                            </span>
+                                            <span className="block text-xs leading-tight text-gray-500">
+                                              {sub.desc}
+                                            </span>
+                                          </div>
+                                        </Link>
+                                      </li>
+                                    );
+                                  })}
+                                </ul>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </li>
               );
-            }
+            })}
+          </ul>
 
-            return (
-              <li
-                key={item.title}
-                className="relative"
-                onMouseEnter={() => handleMouseEnter(index)}
-                onMouseLeave={handleMouseLeave}
+          <div className="flex items-center gap-3">
+            <Link
+              to={buttonTarget}
+              className="hidden items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-bold text-white shadow-md shadow-blue-600/20 sm:inline-flex hover:bg-blue-700 transition duration-200"
+            >
+              {isLoggedIn ? (
+                "Dashboard"
+              ) : (
+                <>
+                  <LuGraduationCap className="text-lg" />
+                  Daftar SPMB
+                </>
+              )}
+            </Link>
+
+            <button
+              type="button"
+              aria-label={openDrawer ? "Tutup menu" : "Buka menu"}
+              aria-expanded={openDrawer}
+              onClick={() => setOpenDrawer((prev) => !prev)}
+              className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white text-xl lg:hidden shadow-md"
+            >
+              {openDrawer ? <FiX /> : <FiMenu />}
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      <AnimatePresence>
+        {openDrawer && (
+          <motion.div
+            initial={{ x: "100%" }}
+            animate={{ x: "0%" }}
+            exit={{ x: "100%" }}
+            transition={{ type: "tween", ease: [0.76, 0, 0.24, 1], duration: 0.5 }}
+            className="fixed inset-y-0 right-0 w-full sm:w-[450px] bg-[#095491] z-[999] text-white p-6 sm:p-10 flex flex-col justify-between shadow-2xl overflow-y-auto"
+          >
+            <div className="flex justify-between items-center w-full border-b border-white/10 pb-4">
+              <div className="flex items-center gap-3">
+                <img src={logoSmk} alt="Logo SMK" className="h-8 w-auto brightness-0 invert" />
+                <span className="text-xs font-bold tracking-widest uppercase text-blue-200">
+                  SPMB BADUNG
+                </span>
+              </div>
+              <button
+                onClick={() => setOpenDrawer(false)}
+                className="w-12 h-12 bg-white/10 text-white rounded-2xl flex items-center justify-center hover:bg-white/20 transition-colors"
               >
-                <button
-                  type="button"
-                  aria-expanded={isActive}
-                  onClick={() => handleMenuClick(index)}
-                  className={clsx(
-                    "flex items-center gap-1 px-4 py-2 text-sm font-semibold tracking-wider transition-colors duration-200 rounded-lg",
-                    isActive ? "text-blue-600 bg-blue-50" : "text-gray-700 hover:text-blue-600"
-                  )}
-                >
-                  {item.title}
-                  <FiChevronDown
-                    className={clsx(
-                      "text-sm transition-transform duration-300",
-                      isActive && "rotate-180"
-                    )}
-                  />
-                </button>
+                <FiX size={24} />
+              </button>
+            </div>
 
-                <AnimatePresence>
-                  {isActive && item.megaMenu && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10, scale: 0.98 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 8, scale: 0.98 }}
-                      transition={{ duration: 0.18, ease: "easeOut" }}
-                      className="absolute left-0 top-full pt-2 w-[480px] z-50"
+            <div className="flex flex-col gap-4 my-auto py-6">
+              <span className="text-blue-200/60 uppercase tracking-widest text-[11px] font-mono">
+                Menu Utama
+              </span>
+
+              {navbarData.map((item, idx) => {
+                const hasChildren = Boolean(item.megaMenu && item.megaMenu.length > 0);
+                const isExpanded = mobileExpanded === idx;
+
+                if (!hasChildren && item.href) {
+                  return (
+                    <Link
+                      key={idx}
+                      to={item.href}
+                      onClick={() => setOpenDrawer(false)}
+                      className="text-2xl sm:text-3xl font-bold tracking-wide flex items-center justify-between border-b border-white/10 pb-3 text-blue-100 hover:text-white transition-colors"
                     >
-                      <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-2xl ring-1 ring-black/5">
-                        <div className="grid grid-cols-2 gap-6">
+                      <span>{item.title}</span>
+                    </Link>
+                  );
+                }
+
+                return (
+                  <div key={idx} className="border-b border-white/10 pb-3">
+                    <button
+                      type="button"
+                      onClick={() => setMobileExpanded(isExpanded ? null : idx)}
+                      className="w-full text-2xl sm:text-3xl font-bold tracking-wide flex items-center justify-between text-blue-100 hover:text-white transition-colors"
+                    >
+                      <span>{item.title}</span>
+                      <FiPlus
+                        size={22}
+                        className={clsx(
+                          "transition-transform duration-300 text-blue-300",
+                          isExpanded && "rotate-45"
+                        )}
+                      />
+                    </button>
+
+                    <AnimatePresence initial={false}>
+                      {isExpanded && item.megaMenu && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.25 }}
+                          className="overflow-hidden pl-2 pt-3 space-y-4"
+                        >
                           {item.megaMenu.map((group) => (
                             <div key={group.category}>
-                              <p className="mb-2 px-2 text-[10px] font-bold tracking-widest text-gray-400 uppercase">
+                              <p className="text-[10px] font-bold tracking-widest text-blue-300/60 uppercase mb-2">
                                 {group.category}
                               </p>
-                              <ul className="space-y-1">
+                              <div className="space-y-2">
                                 {group.items.map((sub) => {
                                   const SubIcon = sub.icon;
                                   return (
-                                    <li key={sub.href}>
-                                      <Link
-                                        to={sub.href}
-                                        onClick={() => {
-                                          setActiveIndex(null);
-                                          setIsPinned(false);
-                                        }}
-                                        className="group flex items-start gap-2.5 rounded-xl p-2 transition-all duration-200 hover:bg-blue-50"
-                                      >
-                                        {SubIcon && (
-                                          <SubIcon className="mt-0.5 shrink-0 text-base text-blue-600 transition-transform duration-200 group-hover:scale-110" />
-                                        )}
-                                        <div>
-                                          <span className="block text-sm font-semibold text-gray-800 transition-colors group-hover:text-blue-600">
-                                            {sub.title}
-                                          </span>
-                                          <span className="block text-xs leading-tight text-gray-500">
-                                            {sub.desc}
-                                          </span>
-                                        </div>
-                                      </Link>
-                                    </li>
+                                    <Link
+                                      key={sub.href}
+                                      to={sub.href}
+                                      onClick={() => setOpenDrawer(false)}
+                                      className="flex items-center gap-3 p-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors"
+                                    >
+                                      {SubIcon && <SubIcon className="text-blue-300 text-lg" />}
+                                      <div>
+                                        <span className="block text-sm font-semibold text-white">
+                                          {sub.title}
+                                        </span>
+                                        <span className="block text-xs text-blue-200/70">
+                                          {sub.desc}
+                                        </span>
+                                      </div>
+                                    </Link>
                                   );
                                 })}
-                              </ul>
+                              </div>
                             </div>
                           ))}
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </li>
-            );
-          })}
-        </ul>
-
-        <div className="flex items-center gap-3">
-          <Link
-            to={buttonTarget}
-            className="hidden items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-bold text-white shadow-md shadow-blue-600/20 sm:inline-flex hover:bg-blue-700 transition duration-200"
-          >
-            {isLoggedIn ? (
-              "Dashboard"
-            ) : (
-              <>
-                <LuGraduationCap className="text-lg" />
-                Daftar SPMB
-              </>
-            )}
-          </Link>
-
-          <button
-            type="button"
-            aria-label={mobileOpen ? "Tutup menu" : "Buka menu"}
-            aria-expanded={mobileOpen}
-            onClick={() => setMobileOpen((prev) => !prev)}
-            className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600/20 text-xl text-blue-400 lg:hidden"
-          >
-            {mobileOpen ? <FiX /> : <FiMenu />}
-          </button>
-        </div>
-      </div>
-
-      <AnimatePresence>
-        {mobileOpen && (
-          <motion.div
-            key="mobile"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.25, ease: "easeInOut" }}
-            className="overflow-hidden bg-slate-950/90 rounded-b-[50px] lg:hidden"
-          >
-            <div className="max-h-[calc(100vh-72px)] overflow-y-auto px-5 pb-6 pt-3">
-              <ul>
-                {navbarData.map((item, index) => {
-                  const isOpen = mobileExpanded === index;
-                  const hasChildren = Boolean(item.megaMenu && item.megaMenu.length > 0);
-
-                  if (!hasChildren && item.href) {
-                    return (
-                      <li key={item.title}>
-                        <Link
-                          to={item.href}
-                          className="flex w-full items-center py-3.5 text-sm font-bold text-white"
-                        >
-                          {item.title}
-                        </Link>
-                      </li>
-                    );
-                  }
-
-                  return (
-                    <li key={item.title}>
-                      <button
-                        type="button"
-                        aria-expanded={isOpen}
-                        onClick={() => setMobileExpanded(isOpen ? null : index)}
-                        className="flex w-full items-center justify-between py-3.5 text-sm font-bold text-white"
-                      >
-                        <span>{item.title}</span>
-                        <FiChevronDown
-                          className={clsx(
-                            "text-base transition-transform duration-300 text-blue-400",
-                            isOpen && "rotate-180"
-                          )}
-                        />
-                      </button>
-                      <AnimatePresence initial={false}>
-                        {isOpen && item.megaMenu && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="overflow-hidden"
-                          >
-                            <div className="space-y-4 pb-4 pl-2">
-                              {item.megaMenu.map((group) => (
-                                <div key={group.category}>
-                                  <p className="mb-2 text-[10px] font-bold tracking-wider text-blue-300/60 uppercase">
-                                    {group.category}
-                                  </p>
-                                  <ul className="space-y-1">
-                                    {group.items.map((sub) => {
-                                      const SubIcon = sub.icon;
-                                      return (
-                                        <li key={sub.href}>
-                                          <Link
-                                            to={sub.href}
-                                            className="flex items-center gap-2.5 rounded-lg px-2 py-2 text-sm text-gray-200"
-                                          >
-                                            {SubIcon && (
-                                              <SubIcon className="text-base text-blue-400" />
-                                            )}
-                                            <div>
-                                              <span className="block font-medium">
-                                                {sub.title}
-                                              </span>
-                                              <span className="block text-xs text-gray-400">
-                                                {sub.desc}
-                                              </span>
-                                            </div>
-                                          </Link>
-                                        </li>
-                                      );
-                                    })}
-                                  </ul>
-                                </div>
-                              ))}
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </li>
-                  );
-                })}
-              </ul>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                );
+              })}
 
               <Link
                 to={buttonTarget}
-                className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-blue-600/30"
+                onClick={() => setOpenDrawer(false)}
+                className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-6 py-3.5 text-sm font-bold text-blue-600 shadow-xl hover:bg-blue-50 transition duration-200"
               >
                 {isLoggedIn ? (
-                  "Dashboard"
+                  "Masuk ke Dashboard"
                 ) : (
                   <>
                     <LuGraduationCap className="text-lg" />
-                    Daftar SPMB
+                    Daftar SPMB Sekarang
                   </>
                 )}
               </Link>
             </div>
+
+            <div className="flex flex-col gap-2 border-t border-white/10 pt-4">
+              <span className="text-blue-200/60 uppercase tracking-widest text-[10px] font-mono">
+                Kontak Sekolah
+              </span>
+              <div className="flex flex-col sm:flex-row gap-3 text-xs text-blue-100">
+                <a href="tel:+62361123456" className="flex items-center gap-1.5 hover:text-white transition-colors">
+                  <FiPhone /> (0361) 123456
+                </a>
+                <a href="mailto:info@smktibaliglobalbadung.sch.id" className="flex items-center gap-1.5 hover:text-white transition-colors">
+                  <FiMail /> info@smktibaliglobalbadung.sch.id
+                </a>
+              </div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
-    </nav>
+    </>
   );
 }

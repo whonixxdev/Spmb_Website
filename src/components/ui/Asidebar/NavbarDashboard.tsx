@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard,
@@ -7,12 +7,14 @@ import {
   FolderCheck,
   CreditCard,
   Megaphone,
+  User,
   LogOut,
   Bell,
   Menu,
 } from "lucide-react";
 
 import logoSmk from "../../../assets/img/logo-smk.png";
+import { getMyProfile, type User as UserType } from "../../../services/api";
 
 export interface NavItem {
   id: string;
@@ -21,8 +23,8 @@ export interface NavItem {
   icon: React.ComponentType<{ className?: string }>;
 }
 
-interface NavbarDashboardProps {
-  userRole?: "siswa" | "admin";
+export interface NavbarDashboardProps {
+  userRole?: "admin" | "siswa" | "panitia";
   userName?: string;
   userEmail?: string;
   onLogout?: () => void;
@@ -55,9 +57,15 @@ const SISWA_NAV_ITEMS: NavItem[] = [
   },
   {
     id: "pengumuman",
-    title: "Status & Pengumuman Seleksi",
+    title: "Status & Pengumuman",
     path: "/siswa/dashboard/pengumuman",
     icon: Megaphone,
+  },
+  {
+    id: "profile-siswa",
+    title: "Pengaturan Profil",
+    path: "/siswa/dashboard/profile",
+    icon: User,
   },
 ];
 
@@ -65,54 +73,110 @@ const ADMIN_NAV_ITEMS: NavItem[] = [
   {
     id: "admin-dashboard",
     title: "Dashboard Admin",
-    path: "/admin/dashboard",
+    path: "/portal-panitia-spmb/dashboard",
     icon: LayoutDashboard,
   },
   {
     id: "kelola-pendaftaran",
     title: "Kelola Pendaftaran",
-    path: "/admin/pendaftaran",
+    path: "/portal-panitia-spmb/pendaftaran",
     icon: FileText,
   },
   {
     id: "kelola-pembayaran",
     title: "Kelola Pembayaran",
-    path: "/admin/pembayaran",
+    path: "/portal-panitia-spmb/pembayaran",
     icon: CreditCard,
   },
   {
     id: "kelola-jurusan",
     title: "Kelola Jurusan & Kuota",
-    path: "/admin/jurusan",
+    path: "/portal-panitia-spmb/jurusan",
     icon: FolderCheck,
   },
   {
     id: "laporan",
     title: "Laporan Data Siswa",
-    path: "/admin/laporan",
+    path: "/portal-panitia-spmb/laporan",
     icon: FileText,
   },
   {
     id: "publikasi",
     title: "Publikasi Hasil Seleksi",
-    path: "/admin/publikasi",
+    path: "/portal-panitia-spmb/publikasi",
     icon: Megaphone,
+  },
+  {
+    id: "profile-admin",
+    title: "Pengaturan Profil",
+    path: "/portal-panitia-spmb/profile",
+    icon: User,
   },
 ];
 
 export default function NavbarDashboard({
-  userRole = "admin",
-  userName = "Ahmad Rizky",
-  userEmail = "ahmad.rizky@gmail.com",
+  userRole,
+  userName,
+  userEmail,
   onLogout,
 }: NavbarDashboardProps) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const location = useLocation();
+  const [userData, setUserData] = useState<UserType | null>(null);
+  const [fetching, setFetching] = useState(true);
 
-  const navList = userRole === "admin" ? ADMIN_NAV_ITEMS : SISWA_NAV_ITEMS;
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    fetchProfileData();
+  }, []);
+
+  const fetchProfileData = async () => {
+    try {
+      setFetching(true);
+      const savedUser = localStorage.getItem("user_data");
+      if (savedUser) {
+        try {
+          setUserData(JSON.parse(savedUser));
+        } catch (e) {}
+      }
+
+      const user = await getMyProfile();
+      setUserData(user);
+      localStorage.setItem("user_data", JSON.stringify(user));
+    } catch (err) {
+      console.error("Gagal memuat profil navbar", err);
+    } finally {
+      setFetching(false);
+    }
+  };
+
+  const activeRole = userRole || userData?.role;
+  const activeName =
+    userName || userData?.biodata?.nama_lengkap || userData?.username || "";
+  const activeEmail = userEmail || userData?.email || "";
+
+  const profilePath =
+    activeRole === "admin" || activeRole === "panitia"
+      ? "/portal-panitia-spmb/profile"
+      : "/siswa/dashboard/profile";
+
+  const navList =
+    activeRole === "admin" || activeRole === "panitia"
+      ? ADMIN_NAV_ITEMS
+      : SISWA_NAV_ITEMS;
 
   const getInitial = (name: string) => {
-    return name ? name.charAt(0).toUpperCase() : "S";
+    return name ? name.charAt(0).toUpperCase() : "-";
+  };
+
+  const handleLogoutAction = () => {
+    if (onLogout) {
+      onLogout();
+    } else {
+      localStorage.removeItem("user_data");
+      navigate("/login");
+    }
   };
 
   return (
@@ -127,7 +191,14 @@ export default function NavbarDashboard({
             <Menu className="w-6 h-6" />
           </button>
 
-          <Link to={userRole === "admin" ? "/admin/dashboard" : "/siswa/dashboard"} className="flex items-center gap-3">
+          <Link
+            to={
+              activeRole === "admin" || activeRole === "panitia"
+                ? "/portal-panitia-spmb/dashboard"
+                : "/siswa/dashboard"
+            }
+            className="flex items-center gap-3"
+          >
             <img
               src={logoSmk}
               alt="Logo SMK TI"
@@ -150,19 +221,29 @@ export default function NavbarDashboard({
 
           <div className="h-6 w-[1px] bg-gray-200 hidden sm:block"></div>
 
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-[#204382] text-white flex items-center justify-center font-bold text-sm shadow-sm">
-              {getInitial(userName)}
+          <Link
+            to={profilePath}
+            className="flex items-center gap-3 p-1.5 rounded-xl hover:bg-slate-100 transition min-h-[40px]"
+            title="Lihat Profil"
+          >
+            <div className="w-9 h-9 rounded-full bg-[#204382] text-white flex items-center justify-center font-bold text-sm shadow-sm shrink-0">
+              {fetching && !activeName ? "..." : getInitial(activeName)}
             </div>
-            <div className="hidden sm:flex flex-col text-left">
-              <span className="text-xs font-semibold text-gray-800 leading-tight">
-                {userName}
-              </span>
-              <span className="text-[11px] text-gray-400 leading-tight">
-                {userEmail}
-              </span>
+            <div className="hidden sm:flex flex-col text-left min-w-[80px]">
+              {fetching && !activeName ? (
+                <div className="h-3 w-20 bg-gray-200 animate-pulse rounded my-1" />
+              ) : (
+                <>
+                  <span className="text-xs font-semibold text-gray-800 leading-tight">
+                    {activeName}
+                  </span>
+                  <span className="text-[11px] text-gray-400 leading-tight">
+                    {activeEmail}
+                  </span>
+                </>
+              )}
             </div>
-          </div>
+          </Link>
         </div>
       </header>
 
@@ -197,8 +278,8 @@ export default function NavbarDashboard({
 
         <div className="p-4 border-t border-gray-100 bg-slate-50/50">
           <button
-            onClick={onLogout}
-            className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors text-sm font-medium"
+            onClick={handleLogoutAction}
+            className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors text-sm font-medium cursor-pointer"
           >
             <LogOut className="w-5 h-5 shrink-0" />
             <span>Keluar Akun</span>
@@ -269,9 +350,9 @@ export default function NavbarDashboard({
                 <button
                   onClick={() => {
                     setIsMobileOpen(false);
-                    if (onLogout) onLogout();
+                    handleLogoutAction();
                   }}
-                  className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors text-sm font-medium"
+                  className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors text-sm font-medium cursor-pointer"
                 >
                   <LogOut className="w-5 h-5 shrink-0" />
                   <span>Keluar Akun</span>

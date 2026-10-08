@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import LogoSmk from "../../assets/img/logo-smk.png";
 import { loginUser } from "../../services/api";
@@ -6,13 +6,24 @@ import { useAuth } from "../../context/AuthContext";
 
 export default function LoginForm() {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, user } = useAuth();
 
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+
+  // Jalankan navigasi setelah state `user` dari AuthContext benar-benar ter-update
+  useEffect(() => {
+    if (user) {
+      if (user.role === "panitia" || user.role === "admin") {
+        navigate("/portal-panitia-spmb/dashboard", { replace: true });
+      } else if (user.role === "siswa") {
+        navigate("/siswa/dashboard", { replace: true });
+      }
+    }
+  }, [user, navigate]);
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,24 +36,22 @@ export default function LoginForm() {
 
     setLoading(true);
 
+    const formattedLogin = identifier.includes("@")
+      ? identifier.trim().toLowerCase()
+      : identifier.trim().toLowerCase().replace(/\s+/g, "_");
+
     try {
       const response = await loginUser({
-        login: identifier,
+        login: formattedLogin,
         password: password,
       });
 
+      // Panggil login context, useEffect di atas yang akan berpindah route
       login(response.access_token, response.data);
-
-      if (response.data.role === "panitia" || response.data.role === "admin") {
-        navigate("/panitia/dashboard");
-      } else {
-        navigate("/siswa/dashboard");
-      }
     } catch (err: any) {
       setErrorMessage(
         err.response?.data?.message || err.message || "Login gagal. Cek kembali akun Anda."
       );
-    } finally {
       setLoading(false);
     }
   };
@@ -175,12 +184,12 @@ export default function LoginForm() {
             </div>
 
             <div className="text-center text-[11px] text-gray-500 my-2">
-              Don't have an account yet?{" "}
+              Belum punya akun?{" "}
               <Link
                 to="/register"
                 className="text-[#204382] font-semibold hover:underline"
               >
-                Sign up now
+                Daftar sekarang
               </Link>
             </div>
 
@@ -194,13 +203,13 @@ export default function LoginForm() {
           </form>
 
           <div className="text-center text-[11px] text-gray-400 mt-8">
-            Having trouble signing in?{" "}
-            <a href="#support" className="text-[#204382] hover:underline">
-              Contact support
+            Kendala saat login?{" "}
+            <a href="#" className="text-[#204382] hover:underline">
+              Hubungi Bantuan
             </a>
           </div>
         </div>
       </div>
     </div>
   );
-}    
+}

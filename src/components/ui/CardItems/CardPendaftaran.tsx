@@ -2,7 +2,7 @@ import type { ReactElement } from "react";
 import { Link } from "react-router-dom";
 import { FiArrowRight } from "react-icons/fi";
 
-const SPMB_HREF = "/spmb";
+const SPMB_HREF = "/login";
 
 export default function RegistrationCard(): ReactElement {
   return (
@@ -75,7 +75,9 @@ export default function RegistrationCard(): ReactElement {
             </Link>
 
             <p className="text-xs text-blue-200 max-w-xs leading-relaxed">
+              <a href="https://wa.me/6282261900070">
               Informasi lebih lanjut? Hubungi WhatsApp kami.
+              </a>
             </p>
           </div>
 

@@ -5,15 +5,15 @@ import {
   forgotPasswordVerifyOtp,
   forgotPasswordSendOtp,
   registerVerifyOtp,
+  registerSendOtp,
 } from "../../services/api";
 
 export default function OtpForm() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Tangkap email & tipe alur dari state router
   const email = location.state?.email || "";
-  const type = location.state?.type || "register"; 
+  const type = location.state?.type || "register";
 
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
@@ -70,15 +70,19 @@ export default function OtpForm() {
     try {
       if (type === "forgot-password") {
         await forgotPasswordVerifyOtp(email, otpCode);
-        // Setelah OTP valid, bisa ke halaman reset password / login
         alert("OTP Valid! Silakan login kembali.");
         navigate("/login");
       } else {
-        const res = await registerVerifyOtp(email, otpCode);
+        const res = await registerVerifyOtp({ email, otp: otpCode });
         if (res.access_token) {
           localStorage.setItem("auth_token", res.access_token);
         }
-        navigate("/siswa/dashboard");
+
+        if (res.data?.role === "panitia" || res.data?.role === "admin") {
+          navigate("/admin/dashboard");
+        } else {
+          navigate("/siswa/dashboard");
+        }
       }
     } catch (err: any) {
       console.error("OTP Error:", err);
@@ -97,7 +101,14 @@ export default function OtpForm() {
     setSuccessMessage("");
 
     try {
-      await forgotPasswordSendOtp(email);
+      if (type === "forgot-password") {
+        await forgotPasswordSendOtp(email);
+      } else {
+        const registerData = location.state?.registerData;
+        if (registerData) {
+          await registerSendOtp(registerData);
+        }
+      }
       setSuccessMessage("Kode OTP baru berhasil dikirim!");
     } catch (err: any) {
       setErrorMessage("Gagal mengirim ulang OTP.");

@@ -37,7 +37,7 @@ export default function HeroSection(): ReactElement {
               </Link>
             ) : (
               <Link
-                to="/register"
+                to="/login"
                 className="px-8 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-full shadow-md transition duration-200 text-center"
               >
                 Daftar Sekarang
@@ -45,7 +45,7 @@ export default function HeroSection(): ReactElement {
             )}
 
             <a
-              href="#jurusan"
+              href="/jurusan"
               className="px-8 py-3.5 bg-transparent hover:bg-gray-50 text-gray-700 font-semibold rounded-full border border-gray-300 transition duration-200 text-center"
             >
               Lihat Jurusan
