@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   CheckCircle2,
   Circle,
@@ -14,6 +14,7 @@ import {
 import SupportCard from "../../../ui/CardItems/SupportCard";
 import maskotImg from "../../../../assets/img/Maskot.png";
 import DataCalonSiswaSection from "./DataCalonSiswaSection";
+import { getMyProfile, type User } from "../../../../services/api";
 
 interface StepItem {
   id: number;
@@ -26,60 +27,57 @@ interface StepItem {
 
 export default function FormulirPendaftaran() {
   const [activeTooltip, setActiveTooltip] = useState<number | null>(null);
+  const [userData, setUserData] = useState<User | null>(null);
 
-  const steps: StepItem[] = [
-    {
-      id: 1,
-      title: "Isi Biodata Utama",
-      desc: "Data pribadi, alamat, dan kontak siswa.",
-      completed: true,
-      active: false,
-      icon: UserCheck,
-    },
-    {
-      id: 2,
-      title: "Pilih Jurusan",
-      desc: "Pemilihan kompetensi keahlian dan gelombang.",
-      completed: true,
-      active: false,
-      icon: GraduationCap,
-    },
-    {
-      id: 3,
-      title: "Unggah Berkas Persyaratan",
-      desc: "Upload pasfoto, KK, dan ijazah/SKL.",
-      completed: false,
-      active: true,
-      icon: FileCheck2,
-    },
-    {
-      id: 4,
-      title: "Pembayaran Registrasi",
-      desc: "Pembayaran biaya administrasi awal.",
-      completed: false,
-      active: false,
-      icon: CreditCard,
-    },
-    {
-      id: 5,
-      title: "Kartu & Kode Akses",
-      desc: "Cetak kartu peserta tes & verifikasi.",
-      completed: false,
-      active: false,
-      icon: QrCode,
-    },
-    {
-      id: 6,
-      title: "Verifikasi Berkas",
-      desc: "Validasi fisik dan pengumuman seleksi.",
-      completed: false,
-      active: false,
-      icon: ShieldCheck,
-    },
+  const fetchUserData = async () => {
+    try {
+      const u = await getMyProfile();
+      setUserData(u);
+    } catch (err) {
+      console.error("Gagal memuat profil pendaftaran:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchUserData();
+  }, []);
+
+  const isBiodataDone = Boolean(userData?.biodata?.nama_lengkap && userData?.biodata?.nisn);
+  const isJurusanDone = Boolean(userData?.pendaftaran?.id_jurusan_pilihan1);
+  const isBerkasDone = Boolean(
+    userData?.berkas?.status_verifikasi && userData?.berkas?.status_verifikasi !== "belum_diunggah"
+  );
+  const isPembayaranDone = Boolean(
+    userData?.berkas?.status_verifikasi === "terverifikasi" || isBerkasDone
+  );
+  const isKartuDone = Boolean(isPembayaranDone && isJurusanDone);
+  const isVerifikasiDone = Boolean(
+    userData?.pendaftaran?.status_kelulusan === "lulus" || userData?.pendaftaran?.status_kelulusan === "proses"
+  );
+
+  const rawSteps = [
+    { id: 1, title: "Isi Biodata Utama", desc: "Data pribadi, alamat, dan kontak siswa.", completed: isBiodataDone, icon: UserCheck },
+    { id: 2, title: "Pilih Jurusan", desc: "Pemilihan kompetensi keahlian dan gelombang.", completed: isJurusanDone, icon: GraduationCap },
+    { id: 3, title: "Unggah Berkas Persyaratan", desc: "Upload pasfoto, KK, dan ijazah/SKL.", completed: isBerkasDone, icon: FileCheck2 },
+    { id: 4, title: "Pembayaran Registrasi", desc: "Pembayaran biaya administrasi awal.", completed: isPembayaranDone, icon: CreditCard },
+    { id: 5, title: "Kartu & Kode Akses", desc: "Cetak kartu peserta tes & verifikasi.", completed: isKartuDone, icon: QrCode },
+    { id: 6, title: "Verifikasi Berkas", desc: "Validasi fisik dan pengumuman seleksi.", completed: isVerifikasiDone, icon: ShieldCheck },
   ];
+
+  let foundActive = false;
+  const steps: StepItem[] = rawSteps.map((s) => {
+    let active = false;
+    if (!s.completed && !foundActive) {
+      active = true;
+      foundActive = true;
+    }
+    return { ...s, active };
+  });
 
   const completedCount = steps.filter((s) => s.completed).length;
   const progressPercentage = Math.round((completedCount / steps.length) * 100);
+  const activeStepObj = steps.find((s) => s.active);
+  const currentStepIndex = activeStepObj ? activeStepObj.id : steps.length;
 
   return (
     <div className="space-y-6">
@@ -94,7 +92,11 @@ export default function FormulirPendaftaran() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         <div className="lg:col-span-2 space-y-6">
-          <DataCalonSiswaSection />
+          <DataCalonSiswaSection
+            user={userData}
+            onRefreshData={fetchUserData}
+            currentStepIndex={currentStepIndex}
+          />
         </div>
 
         <div className="space-y-6">

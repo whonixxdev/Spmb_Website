@@ -30,7 +30,7 @@ export default function HeroSection(): ReactElement {
           <div className="flex flex-wrap gap-4 pt-2">
             {user ? (
               <Link
-                to="/dashboard"
+                to="/siswa/dashboard"
                 className="px-8 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-full shadow-md transition duration-200 text-center"
               >
                 Dashboard

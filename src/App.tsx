@@ -10,13 +10,13 @@ import NavbarDashboard from "./components/ui/Asidebar/NavbarDashboard";
 import BerandaSiswa from "./components/layouts/dashboard/beranda/BerandaSiswa";
 import FormulirPendaftaran from "./components/layouts/dashboard/formulir/FormulirPendaftaran";
 import ForgetPasswordForm from "./auth/login/ForgetPasswordForm";
+import BerandaAdmin from './components/layouts/dashboard/beranda/BerandaAdmin.tsx'
 
 const BerkasSiswa = () => <div className="p-6 font-semibold text-lg">Halaman Berkas Persyaratan</div>;
 const PembayaranSiswa = () => <div className="p-6 font-semibold text-lg">Halaman Pembayaran</div>;
 const PengumumanSiswa = () => <div className="p-6 font-semibold text-lg">Halaman Status & Pengumuman Seleksi</div>;
 const ProfileSiswa = () => <div className="p-6 font-semibold text-lg">Halaman Edit Pengaturan Profil Siswa</div>;
 
-const DashboardAdmin = () => <div className="p-6 font-semibold text-lg">Halaman Dashboard Admin</div>;
 const KelolaPendaftaran = () => <div className="p-6 font-semibold text-lg">Halaman Kelola Pendaftaran</div>;
 const KelolaPembayaran = () => <div className="p-6 font-semibold text-lg">Halaman Kelola Pembayaran</div>;
 const KelolaJurusan = () => <div className="p-6 font-semibold text-lg">Halaman Kelola Jurusan</div>;
@@ -75,7 +75,7 @@ export default function App() {
         <Route element={<PanitiaRoute />}>
           <Route path="/portal-panitia-spmb" element={<DashboardLayout userRole="admin" />}>
             <Route index element={<Navigate to="dashboard" replace />} />
-            <Route path="dashboard" element={<DashboardAdmin />} />
+            <Route path="dashboard" element={<BerandaAdmin />} />
             <Route path="pendaftaran" element={<KelolaPendaftaran />} />
             <Route path="pembayaran" element={<KelolaPembayaran />} />
             <Route path="jurusan" element={<KelolaJurusan />} />

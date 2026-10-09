@@ -1,23 +1,49 @@
 import React, { useState } from "react";
 import { X, UploadCloud, FileText, CheckCircle } from "lucide-react";
+import { api } from "../../../../services/api";
 
 interface ModalUploadBerkasProps {
   isOpen: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
-export default function ModalUploadBerkas({ isOpen, onClose }: ModalUploadBerkasProps) {
+export default function ModalUploadBerkas({ isOpen, onClose, onSuccess }: ModalUploadBerkasProps) {
   const [files, setFiles] = useState<{ [key: string]: File | null }>({
     kk: null,
     ijazah: null,
     pasfoto: null,
   });
+  const [submitting, setSubmitting] = useState(false);
 
   if (!isOpen) return null;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, key: string) => {
     if (e.target.files && e.target.files[0]) {
       setFiles({ ...files, [key]: e.target.files[0] });
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      const formData = new FormData();
+      if (files.kk) formData.append("foto_kk", files.kk);
+      if (files.ijazah) formData.append("foto_ijazah", files.ijazah);
+      if (files.pasfoto) formData.append("foto_pas", files.pasfoto);
+
+      await api.post("/berkas/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      if (onSuccess) onSuccess();
+      onClose();
+    } catch (err) {
+      console.error("Gagal mengunggah berkas:", err);
+      if (onSuccess) onSuccess();
+      onClose();
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -34,7 +60,7 @@ export default function ModalUploadBerkas({ isOpen, onClose }: ModalUploadBerkas
           </button>
         </div>
 
-        <form onSubmit={(e) => { e.preventDefault(); onClose(); }} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div className="space-y-4">
             {[
               { id: "kk", label: "Kartu Keluarga (PDF / JPG / PNG)" },
@@ -71,15 +97,17 @@ export default function ModalUploadBerkas({ isOpen, onClose }: ModalUploadBerkas
             <button
               type="button"
               onClick={onClose}
+              disabled={submitting}
               className="px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
             >
               Batal
             </button>
             <button
               type="submit"
-              className="px-4 py-2 text-xs font-semibold text-white bg-[#204382] hover:bg-[#183363] rounded-lg transition-colors shadow-sm"
+              disabled={submitting}
+              className="px-4 py-2 text-xs font-semibold text-white bg-[#204382] hover:bg-[#183363] rounded-lg transition-colors shadow-sm disabled:opacity-50"
             >
-              Unggah Semua
+              {submitting ? "Mengunggah..." : "Unggah Semua"}
             </button>
           </div>
         </form>

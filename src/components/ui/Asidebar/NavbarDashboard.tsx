@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 
 import logoSmk from "../../../assets/img/logo-smk.png";
-import { getMyProfile, type User as UserType } from "../../../services/api";
+import { getMyProfile, logoutUser, type User as UserType } from "../../../services/api";
 
 export interface NavItem {
   id: string;
@@ -170,12 +170,17 @@ export default function NavbarDashboard({
     return name ? name.charAt(0).toUpperCase() : "-";
   };
 
-  const handleLogoutAction = () => {
+  const handleLogoutAction = async () => {
     if (onLogout) {
       onLogout();
     } else {
-      localStorage.removeItem("user_data");
-      navigate("/login");
+      try {
+        await logoutUser();
+      } catch (err) {
+        console.error("Gagal melakukan request logout ke backend", err);
+      } finally {
+        navigate("/login");
+      }
     }
   };
 

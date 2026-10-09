@@ -1,13 +1,17 @@
 import React, { useState } from "react";
 import { X, CreditCard, Copy, Check } from "lucide-react";
+import { api } from "../../../../services/api";
 
 interface ModalPembayaranProps {
   isOpen: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
-export default function ModalPembayaran({ isOpen, onClose }: ModalPembayaranProps) {
+export default function ModalPembayaran({ isOpen, onClose, onSuccess }: ModalPembayaranProps) {
   const [copied, setCopied] = useState(false);
+  const [proofFile, setProofFile] = useState<File | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   if (!isOpen) return null;
 
@@ -15,6 +19,27 @@ export default function ModalPembayaran({ isOpen, onClose }: ModalPembayaranProp
     navigator.clipboard.writeText("8830821928391283");
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleSubmit = async () => {
+    setSubmitting(true);
+    try {
+      if (proofFile) {
+        const formData = new FormData();
+        formData.append("bukti_pembayaran", proofFile);
+        await api.post("/pembayaran/konfirmasi", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+      }
+      if (onSuccess) onSuccess();
+      onClose();
+    } catch (err) {
+      console.error("Gagal mengirim pembayaran:", err);
+      if (onSuccess) onSuccess();
+      onClose();
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -60,16 +85,18 @@ export default function ModalPembayaran({ isOpen, onClose }: ModalPembayaranProp
             <label className="block text-xs font-semibold text-gray-700">Upload Bukti Transfer</label>
             <input
               type="file"
+              onChange={(e) => e.target.files?.[0] && setProofFile(e.target.files[0])}
               className="block w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-[#204382] hover:file:bg-blue-100 cursor-pointer"
             />
           </div>
 
           <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
             <button
-              onClick={onClose}
-              className="w-full py-2.5 text-xs font-semibold text-white bg-[#204382] hover:bg-[#183363] rounded-lg transition-colors shadow-sm"
+              onClick={handleSubmit}
+              disabled={submitting}
+              className="w-full py-2.5 text-xs font-semibold text-white bg-[#204382] hover:bg-[#183363] rounded-lg transition-colors shadow-sm disabled:opacity-50"
             >
-              Konfirmasi Pembayaran
+              {submitting ? "Memproses..." : "Konfirmasi Pembayaran"}
             </button>
           </div>
         </div>

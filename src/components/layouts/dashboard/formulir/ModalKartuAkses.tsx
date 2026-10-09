@@ -1,13 +1,19 @@
 import React from "react";
 import { X, QrCode, Printer, Download } from "lucide-react";
+import { type User } from "../../../../services/api";
 
 interface ModalKartuAksesProps {
   isOpen: boolean;
   onClose: () => void;
+  user?: User | null;
 }
 
-export default function ModalKartuAkses({ isOpen, onClose }: ModalKartuAksesProps) {
+export default function ModalKartuAkses({ isOpen, onClose, user }: ModalKartuAksesProps) {
   if (!isOpen) return null;
+
+  const noPendaftaran = user?.pendaftaran?.id_pendaftaran 
+    ? `REG-${String(user.pendaftaran.id_pendaftaran).padStart(5, '0')}`
+    : `REG-${user?.id_user || '001'}`;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
@@ -29,23 +35,27 @@ export default function ModalKartuAkses({ isOpen, onClose }: ModalKartuAksesProp
             </div>
             <div>
               <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider">Kode Akses Ujian</p>
-              <p className="text-xl font-extrabold text-[#204382] tracking-widest mt-0.5">SPMB-2026-8892</p>
+              <p className="text-xl font-extrabold text-[#204382] tracking-widest mt-0.5">
+                SPMB-2026-{user?.id_user || '8892'}
+              </p>
             </div>
             <div className="pt-2 text-xs text-gray-600 border-t border-gray-200/60 grid grid-cols-2 gap-2 text-left">
               <div>
                 <span className="text-gray-400 block text-[10px]">No. Pendaftaran</span>
-                <span className="font-semibold">REG-99120</span>
+                <span className="font-semibold">{noPendaftaran}</span>
               </div>
               <div>
-                <span className="text-gray-400 block text-[10px]">Gelombang</span>
-                <span className="font-semibold">Gelombang 1</span>
+                <span className="text-gray-400 block text-[10px]">Nama Siswa</span>
+                <span className="font-semibold truncate block">
+                  {user?.biodata?.nama_lengkap || user?.username || 'Siswa'}
+                </span>
               </div>
             </div>
           </div>
 
           <div className="flex gap-3">
             <button
-              onClick={() => alert("Mengunduh Kartu...")}
+              onClick={() => alert("Mengunduh Kartu Ujian PDF...")}
               className="flex-1 py-2.5 px-3 flex items-center justify-center gap-2 text-xs font-semibold text-[#204382] bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
             >
               <Download className="w-4 h-4" />
